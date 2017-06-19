@@ -15,7 +15,7 @@ extern crate tokio_service;
 use std::io;
 
 use futures_cpupool::CpuPool;
-use futures::future::BoxFuture;
+use futures::future::{BoxFuture, Future};
 
 use r2d2_postgres::{TlsMode, PostgresConnectionManager};
 
@@ -29,6 +29,12 @@ struct Server {
     db_pool: r2d2::Pool<r2d2_postgres::PostgresConnectionManager>,
 }
 
+#[derive(Serialize)]
+struct Message {
+    id: i32,
+    body: String,
+}
+
 impl Service for Server {
     type Request = Request;
     type Response = Response;
@@ -36,7 +42,32 @@ impl Service for Server {
     type Future = BoxFuture<Self::Response, Self::Error>;
 
     fn call(&self, req: Self::Request) -> Self::Future {
-        unimplemented!();
+        assert_eq!(req.path(), "/db");
+        let random_id = rand::thread_rng().gen_range(1, 5);
+
+        let db = self.db_pool.clone();
+        let msg = self.thread_pool.spawn_fn(move || {
+            let conn = db.get() // normally blocks, but will only block the future here
+                .map_err(|e| {
+                    io::Error::new(io::ErrorKind::Other, format!("timeout: {}", e))
+                })?;
+            let stmt = conn.prepare_cached("SELECT * FROM greeting WHERE id = $1")?;
+            let rows = stmt.query(&[&random_id])?;
+            let row = rows.get(0);
+
+            Ok(Message {
+                id: row.get("id"),
+                body: row.get("body"),
+            })
+        });
+
+        msg.map(|msg| {
+            let json = serde_json::to_string(&msg).unwrap();
+            let mut response = Response::new();
+            response.header("Content-Type", "application/json");
+            response.body(&json);
+            response
+        }).boxed()
     }
 }
 
