@@ -14,7 +14,7 @@ use tokio_core::reactor::Core;
 use tokio_io::AsyncRead;
 use tokio_core::net::TcpListener;
 use tokio_service::{Service, NewService};
-use futures::{future, Future, Stream, Sink};
+use futures::{future, Future, Stream, Sink, BoxFuture};
 
 pub struct LineCodec;
 
@@ -72,6 +72,21 @@ where
 
     core.run(server)
 }
+
+struct EchoService;
+
+impl Service for EchoService {
+    type Request = String;
+    type Response = String;
+    type Error = io::Error;
+    type Future = BoxFuture<String, io::Error>;
+    fn call(&self, input: String) -> Self::Future {
+        future::ok(input).boxed()
+    }
+}
+
 fn main() {
-    println!("Hello, world!");
+    if let Err(e) = serve(|| Ok(EchoService)) {
+        println!("Server exited with error {}", e);
+    }
 }
