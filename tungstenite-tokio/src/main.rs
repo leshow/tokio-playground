@@ -2,16 +2,13 @@ extern crate futures;
 extern crate tokio_core;
 extern crate tokio_tungstenite;
 extern crate tungstenite;
-extern crate futures_cpupool;
 
 use std::collections::HashMap;
-use std::env;
 use std::io::{Error, ErrorKind};
 use std::sync::{Arc, Mutex};
 
 use futures::stream::Stream;
 use futures::Future;
-use futures_cpupool::Builder;
 use tokio_core::net::TcpListener;
 use tokio_core::reactor::Core;
 use tungstenite::protocol::Message;
@@ -20,8 +17,6 @@ use tokio_tungstenite::accept_async;
 
 fn main() {
     let addr = "127.0.0.1:12345".parse().unwrap();
-
-    let pool = Builder::new().create();
 
     let mut core = Core::new().unwrap();
     let handle = core.handle();

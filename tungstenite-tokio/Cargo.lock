@@ -3,7 +3,6 @@ name = "tunstenite-tokio"
 version = "0.1.0"
 dependencies = [
  "futures 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-cpupool 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-core 0.1.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-timer 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-tungstenite 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
