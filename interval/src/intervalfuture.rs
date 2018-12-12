@@ -20,9 +20,11 @@ impl Future for IntervalFut {
     fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
         let cur = self.interval.get_counter();
         if self.last == cur {
+            self.interval.set_task(futures::task::current());
             Ok(Async::NotReady)
         } else {
             self.last = cur;
+            self.interval.notify();
             Ok(Async::Ready(cur))
         }
     }

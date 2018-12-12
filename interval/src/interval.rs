@@ -1,7 +1,9 @@
+use futures::task::Task;
 use std::{
+    cell::UnsafeCell,
     sync::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
-        Arc,
+        Arc, Mutex,
     },
     thread,
     time::Duration,
@@ -10,6 +12,7 @@ use std::{
 pub struct Interval {
     counter: Arc<AtomicUsize>,
     running: Arc<AtomicBool>,
+    task: Option<Task>, // i don't think Arc<Mutex<Task>> is necessary
 }
 
 impl Drop for Interval {
@@ -36,7 +39,22 @@ impl Interval {
             }
         });
 
-        Interval { counter, running }
+        Interval {
+            counter,
+            running,
+            task: None,
+        }
+    }
+
+    pub fn set_task(&mut self, task: Task) {
+        self.task = Some(task);
+    }
+
+    pub fn notify(&self) {
+        if let Some(ref task) = self.task {
+            // let task = task.lock().unwrap();
+            task.notify();
+        }
     }
 
     pub fn get_counter(&self) -> usize {
