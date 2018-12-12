@@ -1,55 +1,39 @@
-use std::{
-    sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
-        Arc,
-    },
-    thread,
-    time::Duration,
-};
+#![feature(never_type)]
 
-struct Interval {
-    counter: Arc<AtomicUsize>,
-    running: Arc<AtomicBool>,
-}
+mod interval;
+mod intervalfuture;
 
-impl Drop for Interval {
-    fn drop(&mut self) {
-        println!("Interval dropping...");
-        self.running.store(false, Ordering::SeqCst);
-    }
-}
-
-impl Interval {
-    pub fn from_millis(millis: u64) -> Self {
-        let duration = Duration::from_millis(millis);
-        let counter = Arc::new(AtomicUsize::new(0));
-        let running = Arc::new(AtomicBool::new(true));
-
-        let r_clone = running.clone();
-        let c_clone = counter.clone();
-
-        thread::spawn(move || {
-            while r_clone.load(Ordering::SeqCst) {
-                thread::sleep(duration);
-                let prev = c_clone.fetch_add(1, Ordering::SeqCst);
-                println!("Interval still alive, value was: {}", prev);
-            }
-        });
-
-        Interval { counter, running }
-    }
-
-    pub fn get_counter(&self) -> usize {
-        self.counter.load(Ordering::SeqCst)
-    }
-}
+use crate::{interval::Interval, intervalfuture::IntervalFut};
+use futures::prelude::*;
+use std::{thread, time::Duration};
 
 fn main() {
+    // main_poll()
+    main_sync()
+}
+
+fn main_sync() {
     let interval = Interval::from_millis(500);
     let duration = Duration::from_millis(100);
 
     for i in 1..=50 {
         println!("Iteration {}, counter {}", i, interval.get_counter());
+        thread::sleep(duration);
+    }
+}
+
+fn main_poll() {
+    let mut fut = IntervalFut::new(Interval::from_millis(500));
+    let duration = Duration::from_millis(100);
+
+    for i in 1..=50 {
+        match fut.poll() {
+            Ok(Async::Ready(val)) => {
+                println!("Iteration number {}, counter {}", val, i);
+            }
+            Ok(Async::NotReady) => (),
+            Err(_) => unreachable!(),
+        }
         thread::sleep(duration);
     }
 }
