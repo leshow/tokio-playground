@@ -8,8 +8,8 @@ use futures::prelude::*;
 use std::{thread, time::Duration};
 
 fn main() {
-    // main_poll()
-    main_sync()
+    main_poll()
+    // main_sync()
 }
 
 fn main_sync() {
@@ -29,7 +29,7 @@ fn main_poll() {
     for i in 1..=50 {
         match fut.poll() {
             Ok(Async::Ready(val)) => {
-                println!("Iteration number {}, counter {}", val, i);
+                println!("Iteration number {}, counter {}", i, val);
             }
             Ok(Async::NotReady) => (),
             Err(_) => unreachable!(),
