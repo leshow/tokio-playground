@@ -3,13 +3,19 @@
 mod interval;
 mod intervalfuture;
 
-use crate::{interval::Interval, intervalfuture::IntervalFut};
+use crate::{
+    interval::Interval,
+    intervalfuture::{IntervalFut, IntervalPrinter},
+};
 use futures::prelude::*;
 use std::{thread, time::Duration};
+use tokio::prelude::*;
 
 fn main() {
-    main_poll()
+    // main_poll()
     // main_sync()
+    // main_tokio()
+    // main_tokio_ok();
 }
 
 fn main_sync() {
@@ -36,4 +42,14 @@ fn main_poll() {
         }
         thread::sleep(duration);
     }
+}
+
+fn main_tokio() {
+    let fut = IntervalPrinter(IntervalFut::new(Interval::from_millis(500)));
+    tokio::run(fut);
+}
+
+fn main_tokio_ok() {
+    let fut = IntervalFut::new(Interval::from_millis(500));
+    tokio::run(fut.map(|_| ()).map_err(|_| ()));
 }

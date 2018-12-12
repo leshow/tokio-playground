@@ -1,5 +1,5 @@
 use crate::interval::Interval;
-use futures::prelude::*;
+use futures::{prelude::*, try_ready};
 
 pub struct IntervalFut {
     interval: Interval,
@@ -25,5 +25,26 @@ impl Future for IntervalFut {
             self.last = cur;
             Ok(Async::Ready(cur))
         }
+    }
+}
+
+pub struct IntervalPrinter(pub IntervalFut);
+
+impl Future for IntervalPrinter {
+    type Error = ();
+    type Item = ();
+
+    fn poll(&mut self) -> Poll<Self::Item, Self::Error> {
+        // match self.0.poll() {
+        //     Ok(Async::Ready(cur)) => {
+        //         println!("Counter is: {}", cur);
+        //         Ok(Async::Ready(()))
+        //     }
+        //     Ok(Async::NotReady) => Ok(Async::NotReady),
+        //     Err(_) => Err(()),
+        // }
+        let cur = try_ready!(self.0.poll());
+        println!("Counter is: {}", cur);
+        Ok(Async::Ready(()))
     }
 }
