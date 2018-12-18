@@ -2,6 +2,7 @@
 
 mod interval;
 mod intervalfuture;
+mod myok;
 mod timeout;
 mod timeoutstream;
 
@@ -18,7 +19,9 @@ fn main() {
     // main_sync()
     // main_tokio()
     // main_tokio_ok()
-    timeoutstream::run_timeout_stream()
+    // timeoutstream::run_timeout_stream()
+    myok::main();
+    myok::range()
 }
 
 fn main_sync() {
