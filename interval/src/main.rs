@@ -2,6 +2,8 @@
 
 mod interval;
 mod intervalfuture;
+mod timeout;
+mod timeoutstream;
 
 use crate::{
     interval::Interval,
@@ -15,7 +17,8 @@ fn main() {
     // main_poll()
     // main_sync()
     // main_tokio()
-    main_tokio_ok()
+    // main_tokio_ok()
+    timeoutstream::run_timeout_stream()
 }
 
 fn main_sync() {

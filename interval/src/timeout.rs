@@ -8,20 +8,20 @@ use std::{
     time::Duration,
 };
 
-pub struct Interval {
+pub struct Timeout {
     counter: Arc<AtomicUsize>,
     running: Arc<AtomicBool>,
-    task: Option<Task>, // i don't think Arc<Mutex<Task>> is necessary
+    task: Arc<Mutex<Option<Task>>>, // i don't think Arc<Mutex<Task>> is necessary
 }
 
-impl Drop for Interval {
+impl Drop for Timeout {
     fn drop(&mut self) {
-        println!("Interval dropping...");
+        println!("Timeout dropping...");
         self.running.store(false, Ordering::SeqCst);
     }
 }
 
-impl Interval {
+impl Timeout {
     pub fn from_millis(millis: u64) -> Self {
         let duration = Duration::from_millis(millis);
         let counter = Arc::new(AtomicUsize::new(0));
@@ -29,31 +29,30 @@ impl Interval {
 
         let r_clone = running.clone();
         let c_clone = counter.clone();
+        let task = Arc::new(Mutex::new(None));
+        let t_clone: Arc<Mutex<Option<Task>>> = task.clone();
 
         thread::spawn(move || {
             while r_clone.load(Ordering::SeqCst) {
                 thread::sleep(duration);
                 let prev = c_clone.fetch_add(1, Ordering::SeqCst);
-                println!("Interval still alive, value was: {}", prev);
+                println!("Timeout still alive, value was: {}", prev);
+
+                if let Some(ref task) = *t_clone.lock().unwrap() {
+                    task.notify();
+                }
             }
         });
 
-        Interval {
+        Timeout {
             counter,
             running,
-            task: None,
+            task,
         }
     }
 
     pub fn set_task(&mut self, task: Task) {
-        self.task = Some(task);
-    }
-
-    pub fn notify(&self) {
-        if let Some(ref task) = self.task {
-            // let task = task.lock().unwrap();
-            task.notify();
-        }
+        *self.task.lock().unwrap() = Some(task);
     }
 
     pub fn get_counter(&self) -> usize {
